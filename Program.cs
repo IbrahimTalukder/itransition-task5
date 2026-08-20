@@ -1,7 +1,14 @@
 using System.IO.Compression;
 using MovieStoreShowcase.Services;
 
-var builder = WebApplication.CreateBuilder(args);
+// Fix for Render inotify limit by disabling content root reloading watch
+var options = new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = Directory.GetCurrentDirectory()
+};
+
+var builder = WebApplication.CreateBuilder(options);
 
 // Render Port Configuration
 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
