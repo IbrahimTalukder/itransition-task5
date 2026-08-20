@@ -1,0 +1,5 @@
+bin/
+obj/
+wwwroot/trailers/*.mp4
+.vs/
+*.user

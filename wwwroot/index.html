@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Movie Store Showcase</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="field">
+    <label for="regionSelect">Language</label>
+    <select id="regionSelect"></select>
+  </div>
+
+  <div class="field">
+    <label for="seedInput">Seed</label>
+      <div class="seed-row">
+        <input type="number" id="seedInput" min="0" step="1" />
+          <button id="randomSeedBtn" class="icon-btn" title="Randomize seed">
+            <svg viewBox="0 0 24 24" width="15" height="15"><path fill="currentColor" d="M17.65 6.35A7.95 7.95 0 0 0 12 4a8 8 0 1 0 7.75 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+          </button>
+      </div>
+  </div>
+
+  <div class="field wide">
+    <label for="likesInput">Likes</label>
+    <input type="range" id="likesInput" min="0" max="10" step="0.1" />
+  </div>
+
+  <div class="field">
+    <label for="reviewsInput">Review</label>
+      <div class="stepper-row">
+        <input type="number" id="reviewsInput" min="0" max="10" step="0.1" />
+          <div class="stepper-arrows">
+              <button id="reviewsUpBtn" class="stepper-btn" title="Increase" tabindex="-1">&#9650;</button>
+              <button id="reviewsDownBtn" class="stepper-btn" title="Decrease" tabindex="-1">&#9660;</button>
+            </div>
+      </div>
+  </div>
+
+  <div class="view-toggle">
+      <button id="tableViewBtn" class="icon-btn active" title="Table view">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M3 4h18v4H3V4zm0 6h18v4H3v-4zm0 6h18v4H3v-4z"/></svg>
+      </button>
+      <button id="galleryViewBtn" class="icon-btn" title="Gallery view">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+      </button>
+      <button id="exportBtn" class="icon-btn" title="Export current page as ZIP">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M12 3v10.5l3.5-3.5 1.4 1.4L12 16.8l-4.9-4.9 1.4-1.4 3.5 3.5V3h2zM5 19h14v2H5z"/></svg>
+      </button>
+  </div>
+</div>
+
+<div id="statusBar" class="status-bar"></div>
+
+<!-- TABLE VIEW -->
+<div id="tableView" class="view">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-caret"></th>
+        <th>#</th>
+        <th>Genre</th>
+        <th>Title</th>
+        <th>Cast</th>
+        <th>Year</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <div class="pager" id="pager"></div>
+</div>
+
+<!-- GALLERY VIEW -->
+<div id="galleryView" class="view hidden">
+    <div id="galleryGrid" class="gallery-grid"></div>
+    <div id="galleryLoader" class="gallery-loader">Loading more...</div>
+</div>
+
+<!-- Centered modal: gallery cards open the movie detail here instead of
+     inline in the (too-narrow) card, which used to clip/overflow the video
+     and leave a big blank gap below it. -->
+<div id="galleryModalOverlay" class="modal-overlay hidden">
+    <div class="modal-card">
+        <button id="galleryModalClose" class="modal-close" title="Close">&times;</button>
+        <div id="galleryModalContent"></div>
+    </div>
+</div>
+
+<template id="movieDetailTemplate">
+  <div class="movie-detail">
+      <div class="trailer-wrap">
+        <video controls preload="auto" class="trailer-video"></video>
+          <button class="play-overlay" title="Play trailer">
+            <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+          </button>
+        <div class="likes-btn"></div>
+      </div>
+
+    <div class="detail-info">
+        <div class="detail-title-row">
+          <h3 class="detail-title"></h3>
+          <span class="detail-yeargenre"></span>
+        </div>
+        <div class="detail-badges"></div>
+        <div class="detail-cast"></div>
+        <div class="detail-director"></div>
+        <p class="detail-desc"></p>
+        <div class="review-header">Review</div>
+        <div class="reviews"></div>
+    </div>
+  </div>
+</template>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+:root {
+  --bg: #ffffff;
+  --page-bg: #eef0f3;
+  --panel: #ffffff;
+  --border: #e3e5ea;
+  --text: #16181d;
+  --muted: #7a7f8a;
+  --accent: #3266f5;
+  --accent-dark: #1f2937;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+}
+
+/* ---- Toolbar ---- */
+.toolbar {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 6px 12px;
+  min-width: 140px;
+  justify-content: center;
+}
+.field.wide { min-width: 190px; }
+.field label { text-transform: uppercase; letter-spacing: .04em; font-size: 10px; }
+
+select, input[type=number] {
+  background: transparent;
+  color: var(--text);
+  border: none;
+  outline: none;
+  padding: 2px 0;
+  font-size: 14px;
+  width: 100%;
+}
+select { cursor: pointer; }
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+input[type=range] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.seed-row, .stepper-row { display: flex; align-items: center; gap: 6px; }
+.seed-row input { width: 100px; }
+.stepper-row input { width: 44px; }
+
+.stepper-arrows { display: flex; flex-direction: column; gap: 0; }
+.stepper-btn {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 8px;
+  padding: 1px 3px;
+  cursor: pointer;
+}
+.stepper-btn:hover { color: var(--accent); }
+
+.icon-btn {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+.icon-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.view-toggle { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+
+.status-bar { padding: 4px 20px; font-size: 12px; color: var(--muted); min-height: 20px; }
+
+.view { padding: 0 20px 40px; }
+.view.hidden { display: none; }
+
+/* ---- Table ---- */
+table { width: 100%; border-collapse: collapse; background: var(--panel); }
+thead th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--muted);
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.col-caret { width: 28px; }
+
+tbody tr.movie-row { cursor: pointer; }
+tbody tr.movie-row:hover { background: #f6f7f9; }
+tbody tr.movie-row.open { background: #eef2ff; }
+tbody td { padding: 11px 8px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.caret { display: inline-flex; color: var(--muted); transition: transform .15s; }
+.caret.open { transform: rotate(180deg); }
+
+tr.detail-row td { padding: 0; border-bottom: 1px solid var(--border); background: var(--panel); }
+
+.movie-detail { display: flex; gap: 22px; padding: 20px; }
+.trailer-wrap {
+  flex: 0 0 320px;
+  position: relative;
+  width: 320px;
+  height: 180px;
+  border-radius: 6px;
+  background: #000;
+}
+.trailer-video { width: 100%; height: 100%; object-fit: cover; display: block; background: #000; border-radius: 6px; }
+.play-overlay {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.play-overlay.hidden { display: none; }
+.trailer-wrap .likes-btn {
+  position: absolute;
+  left: 50%;
+  bottom: -13px;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+.detail-info { flex: 1; min-width: 0; padding-top: 2px; }
+.detail-title-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.detail-title { margin: 0; font-size: 19px; font-weight: 700; }
+.detail-yeargenre { color: var(--muted); font-size: 14px; }
+
+.detail-badges { display: flex; align-items: center; gap: 10px; margin: 8px 0 10px; font-size: 13px; }
+.badge-top10 {
+  background: var(--accent-dark);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+.badge-age { font-style: italic; font-weight: 600; }
+
+.detail-cast, .detail-director { font-size: 13.5px; margin-bottom: 4px; color: var(--text); }
+.detail-cast b, .detail-director b { font-weight: 400; color: var(--text); }
+.detail-cast i, .detail-director i { font-style: italic; }
+
+.detail-desc { color: var(--text); font-size: 14px; line-height: 1.55; margin: 12px 0 16px; max-width: 640px; }
+
+.review-header { color: var(--muted); font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+.reviews { display: flex; flex-direction: column; gap: 12px; max-width: 640px; }
+.review { font-size: 13.5px; line-height: 1.5; }
+.review .review-text { color: var(--text); }
+.review .author { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.review .author i { font-style: italic; }
+
+/* ---- Pagination ---- */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 8px;
+}
+.pager button {
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 8px;
+}
+.pager button:hover { border-color: var(--accent); color: var(--accent); }
+.pager button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pager button:disabled { opacity: .4; cursor: default; }
+
+/* ---- Gallery ---- */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+  padding-top: 16px;
+}
+.gallery-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+.gallery-card .poster {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  text-align: center;
+  padding: 10px;
+}
+.gallery-card .info { padding: 10px 12px; }
+.gallery-card .title { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.gallery-card .meta { font-size: 12px; color: var(--muted); }
+
+.gallery-loader { text-align: center; padding: 20px; color: var(--muted); font-size: 13px; }
+.gallery-loader.hidden { visibility: hidden; }
+
+/* ---- Gallery detail modal ----
+   Clicking a gallery card used to expand the full movie-detail block
+   (built for a wide table row, with a fixed 320px-wide video) *inside*
+   the ~240px gallery card. It overflowed sideways, got clipped by the
+   card's overflow:hidden, and left a big blank gap below. Opening it as
+   a centered modal instead gives it the width it actually needs. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 20, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 100;
+}
+.modal-overlay.hidden { display: none; }
+.modal-card {
+  position: relative;
+  background: var(--panel);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 700px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+  padding: 22px;
+}
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f2f5;
+  color: var(--text);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.modal-close:hover { background: var(--border); }
+
+/* Inside the modal the row layout (fixed 320px video + info) still fits
+   comfortably up to 700px, but on narrow/mobile widths let it stack so it
+   never overflows. */
+@media (max-width: 620px) {
+  .modal-card .movie-detail { flex-direction: column; }
+  .modal-card .trailer-wrap { width: 100%; flex-basis: auto; }
+}
+
+.seasons { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
+.season-chip {
+  font-size: 11px;
+  background: #f3f4f6;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+  color: var(--muted);
+}

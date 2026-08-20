@@ -1,0 +1,25 @@
+{
+  "code": "en-US",
+  "displayName": "English (US)",
+  "titleAdjectives": ["Silent", "Broken", "Golden", "Last", "Hidden", "Electric", "Crimson", "Endless", "Wild", "Forgotten", "Distant", "Quiet", "Burning", "Frozen", "Sudden", "Reckless", "Sacred", "Empty", "Restless", "Bitter"],
+  "titleNouns": ["Shadows", "Horizon", "Echoes", "Redemption", "Storm", "Harbor", "Memory", "Kingdom", "Rain", "Voyage", "Legacy", "Whisper", "Fire", "Ocean", "Signal", "Garden", "Machine", "Letter", "River", "Mirror"],
+  "titlePatterns": ["The {Adj} {Noun}", "{Adj} {Noun}", "{Noun} of {Noun2}", "{Noun}", "The {Noun}", "{Adj}, {Adj2}", "{Noun2} & {Noun}", "A {Adj} {Noun}"],
+  "firstNames": ["John", "Emma", "Michael", "Olivia", "James", "Sophia", "Robert", "Ava", "William", "Mia", "Lee", "Nina", "Jack", "Grace", "Henry", "Chloe", "Paul", "Ella", "Daniel", "Ruth", "Lake", "Elison", "Andy", "Joanna", "Goe"],
+  "lastNames": ["Smith", "Clare", "Simone", "Boom", "Sizee", "Manzarek", "Morrison", "Low", "Jarmush", "Clark", "Jones-Ackels", "Antonina", "Joel", "Ronald", "Lapis-Dreyfus", "Smidth", "Queue", "Son", "Zimmer", "Hahn", "Becker", "Lang"],
+  "genres": ["Comedy", "Action", "Drama", "Family", "Thriller", "Horror", "Romance", "Sci-Fi", "Documentary", "Mystery"],
+  "companyNames": ["Hyatt Inc", "Lang - Hahn", "Borer - Becker", "Nova Studios", "Silverline Media", "Bright Path", "Union Pictures", "Cedar & Co"],
+  "reviewPhrases": [
+    "A masterclass in tension, though the third act stumbles.",
+    "We need to navigate the redundant alarm before it clicks.",
+    "Andy shoes are designed to keep durability in mind, most stylish range.",
+    "None of it makes any sense to me. Not good.",
+    "Left me thinking about it for days afterward.",
+    "The pacing drags but the performances carry it through.",
+    "A visually stunning ride from start to finish.",
+    "Predictable, but comforting in its own way.",
+    "Could not stop watching, honestly one of the year's best.",
+    "The dialogue felt forced in the middle stretch.",
+    "A quiet, patient story that rewards attention.",
+    "Too long by half an hour, but the ending lands."
+  ]
+}

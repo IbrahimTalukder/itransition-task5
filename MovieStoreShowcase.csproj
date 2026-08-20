@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 3rd-party fake-data generation library (required by task) -->
+    <PackageReference Include="Bogus" Version="35.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Locale/config data is content, not code. The Web SDK already globs these
+         in as Content by default - just attach copy-to-output metadata. -->
+    <Content Update="Data\Locales\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>
