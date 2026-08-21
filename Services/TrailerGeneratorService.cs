@@ -35,7 +35,7 @@ public class TrailerGeneratorService
     // lightweight, and the old cap of 1 meant a whole page's worth of
     // background prefetching serialized into a long queue, which is what
     // made a single movie feel like it took minutes to show up.
-    private static readonly SemaphoreSlim _ffmpegGate = new(3, 3);
+    private static readonly SemaphoreSlim _ffmpegGate = new(2, 2);
 
     // (background, accent) hex pairs - deterministically picked, never hardcoded
     // into the generation *logic* being tied to a region; just a visual palette pool.
