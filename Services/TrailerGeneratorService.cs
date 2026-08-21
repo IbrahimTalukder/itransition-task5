@@ -329,8 +329,8 @@ public class TrailerGeneratorService
             // Two independently-drifting gradient "scenes" - gradients is a *source*
             // filter, so it can't be chained onto an existing stream, it has to be
             // the whole -i itself.
-            string scene1 = $"gradients=s=960x540:d={duration}:c0={bg1}:c1={accent1},hue=h='{hueSpeed1.ToString(inv)}*sin(2*PI*t/{duration})':s=1";
-            string scene2 = $"gradients=s=960x540:d={duration}:c0={bg2}:c1={accent2},hue=h='{hueSpeed2.ToString(inv)}*sin(2*PI*t/{duration})':s=1";
+            string scene1 = $"gradients=s=640x360:d={duration}:c0={bg1}:c1={accent1},hue=h='{hueSpeed1.ToString(inv)}*sin(2*PI*t/{duration})':s=1";
+            string scene2 = $"gradients=s=640x360:d={duration}:c0={bg2}:c1={accent2},hue=h='{hueSpeed2.ToString(inv)}*sin(2*PI*t/{duration})':s=1";
             videoInputArgs.AddRange(new[] { "-f", "lavfi", "-i", scene1, "-f", "lavfi", "-i", scene2 });
         }
 
@@ -339,8 +339,8 @@ public class TrailerGeneratorService
         // short clips instead of leaving a gap, trim cuts long ones) so xfade
         // gets two clean, equal-length streams to work with regardless of source.
         string PreChain(int idx, double eqB, double eqC, double eqS, double speed) =>
-            $"[{idx}:v]setpts=(1/{speed.ToString(inv)})*PTS,scale=960:540:force_original_aspect_ratio=increase," +
-            $"crop=960:540,setsar=1,fps=25,eq=brightness={eqB.ToString(inv)}:contrast={eqC.ToString(inv)}:saturation={eqS.ToString(inv)}," +
+            $"[{idx}:v]setpts=(1/{speed.ToString(inv)})*PTS,scale=640:360:force_original_aspect_ratio=increase," +
+            $"crop=640:360,setsar=1,fps=25,eq=brightness={eqB.ToString(inv)}:contrast={eqC.ToString(inv)}:saturation={eqS.ToString(inv)}," +
             $"tpad=stop_mode=clone:stop_duration={duration},trim=duration={duration},setpts=PTS-STARTPTS[s{idx}]";
 
         // For a still image: scale it up first so zoompan has room to zoom into
@@ -349,7 +349,7 @@ public class TrailerGeneratorService
         // the "motion" for what would otherwise be a static picture.
         string ImagePreChain(int idx, double eqB, double eqC, double eqS, double zoomSpeed) =>
             $"[{idx}:v]scale=1600:-2,zoompan=z='min(zoom+{zoomSpeed.ToString(inv)}\\,1.25)':d={frames}:" +
-            $"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=960x540:fps=25,setsar=1," +
+            $"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=640x360:fps=25,setsar=1," +
             $"eq=brightness={eqB.ToString(inv)}:contrast={eqC.ToString(inv)}:saturation={eqS.ToString(inv)},setpts=PTS-STARTPTS[s{idx}]";
 
         string chain0 = usedAiImages ? ImagePreChain(0, eqB1, eqC1, eqS1, zoomSpeed1) : PreChain(0, eqB1, eqC1, eqS1, speed1);
@@ -410,7 +410,7 @@ public class TrailerGeneratorService
 
         args.AddRange(new[]
         {
-            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-t", duration.ToString(),
+            "-c:v", "libx264", "-threads", "1", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-t", duration.ToString(),
             "-movflags", "+faststart",
         });
         if (withAudio) args.AddRange(new[] { "-c:a", "aac", "-b:a", "96k" });
