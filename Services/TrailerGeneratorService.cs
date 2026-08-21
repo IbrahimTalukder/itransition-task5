@@ -315,11 +315,22 @@ public class TrailerGeneratorService
         string chain0 = usedAiImages ? ImagePreChain(0, eqB1, eqC1, eqS1, zoomSpeed1) : PreChain(0, eqB1, eqC1, eqS1, speed1);
         string chain1 = usedAiImages ? ImagePreChain(1, eqB2, eqC2, eqS2, zoomSpeed2) : PreChain(1, eqB2, eqC2, eqS2, speed2);
 
+        // On Windows (local dev) ffmpeg's drawtext usually finds a usable default
+        // font on its own. On the minimal Linux container this runs in on Render,
+        // there are no fonts installed at all, so drawtext fails outright unless
+        // we point it at an explicit font file. FFMPEG_FONT_FILE is only set in
+        // the Docker image (see Dockerfile) - unset locally, so this changes
+        // nothing about local behavior.
+        string? fontFileEnv = Environment.GetEnvironmentVariable("FFMPEG_FONT_FILE");
+        string fontFileClause = (!string.IsNullOrEmpty(fontFileEnv) && File.Exists(fontFileEnv))
+            ? $"fontfile='{EscapePath(fontFileEnv)}':"
+            : "";
+
         string filterComplex =
             $"{chain0};{chain1};" +
             $"[s0][s1]xfade=transition={transition}:duration={transDur.ToString(inv)}:offset={offset.ToString(inv)}[bg];" +
-            $"[bg]drawtext=textfile='{EscapePath(titleFile)}':fontcolor=white:fontsize=58:{titlePos}:alpha='{fadeExpr}':box=0[bgt];" +
-            $"[bgt]drawtext=textfile='{EscapePath(subFile)}':fontcolor=white@0.85:fontsize=26:x=(w-text_w)/2:y=h/2+70:alpha='{subFade}':box=0[outv]";
+            $"[bg]drawtext=textfile='{EscapePath(titleFile)}':{fontFileClause}fontcolor=white:fontsize=58:{titlePos}:alpha='{fadeExpr}':box=0[bgt];" +
+            $"[bgt]drawtext=textfile='{EscapePath(subFile)}':{fontFileClause}fontcolor=white@0.85:fontsize=26:x=(w-text_w)/2:y=h/2+70:alpha='{subFade}':box=0[outv]";
 
         var args = new List<string> { "-y" };
         args.AddRange(videoInputArgs);

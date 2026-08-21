@@ -5,18 +5,13 @@ RUN dotnet restore "MovieStoreShowcase.csproj"
 COPY . .
 RUN dotnet publish -c Release -o /app/publish
 
-# Fetch a static, self-contained ffmpeg build in its own isolated stage -
-# never apt-get installed into the aspnet runtime image itself (that broke
-# the .NET runtime with a segfault on a previous deploy).
-#
-# Using BtbN's "gpl" static build here instead of the johnvansickle one:
-# the johnvansickle build turned out not to include the `drawtext` filter
-# (needed for the title text overlay), which made every trailer request
-# fail with "No such filter: 'drawtext'". BtbN's gpl build bundles
-# freetype/fontconfig properly and includes the full filter set.
+# Fetch a static, self-contained ffmpeg build (with drawtext support) and a
+# real .ttf font in one isolated stage - never apt-get installed into the
+# aspnet runtime image itself (that broke the .NET runtime with a segfault
+# on an earlier attempt).
 FROM debian:bookworm-slim AS ffmpeg
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates curl xz-utils && \
+    apt-get install -y --no-install-recommends ca-certificates curl xz-utils fonts-dejavu-core && \
     curl -L https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz -o /tmp/ffmpeg.tar.xz && \
     tar -xf /tmp/ffmpeg.tar.xz -C /tmp && \
     mv /tmp/ffmpeg-master-latest-linux64-gpl/bin/ffmpeg /usr/local/bin/ffmpeg && \
@@ -26,10 +21,16 @@ RUN apt-get update && \
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 
-# Just copying two binary files in - the aspnet base image's own packages
-# are never touched, so there's nothing for it to conflict with.
+# Just copying files in (two binaries + one font) - the aspnet base image's
+# own packages are never touched, so there's nothing for it to conflict with.
 COPY --from=ffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY --from=ffmpeg /usr/local/bin/ffprobe /usr/local/bin/ffprobe
+COPY --from=ffmpeg /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf /usr/share/fonts/dejavu/DejaVuSans-Bold.ttf
+
+# Only set inside the container - TrailerGeneratorService.cs checks for this
+# and falls back to ffmpeg's own default-font lookup (what already works on
+# local/Windows dev) when it's unset, so this doesn't change local behavior.
+ENV FFMPEG_FONT_FILE=/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf
 
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
