@@ -22,6 +22,14 @@ public class TrailerGeneratorService
     private readonly string _tempFolder;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
 
+    // Render's free tier (and similar small hosts) has only ~512MB RAM. Several
+    // ffmpeg encodes running at once (e.g. background prefetch overlapping with
+    // an Export click) can push total memory past that and get the whole
+    // container OOM-killed (exit 137) - not just the request that triggered it.
+    // Capping how many ffmpeg processes run at the same time app-wide keeps
+    // peak memory bounded; it costs a bit of throughput, not correctness.
+    private static readonly SemaphoreSlim _ffmpegGate = new(1, 1);
+
     // (background, accent) hex pairs - deterministically picked, never hardcoded
     // into the generation *logic* being tied to a region; just a visual palette pool.
     // Kept large (20+) so that combined with animation style, transition type,
@@ -159,12 +167,23 @@ public class TrailerGeneratorService
             psi.ArgumentList.Add("3");
             psi.ArgumentList.Add(posterPath);
 
-            using var proc = Process.Start(psi)!;
-            string stderr = await proc.StandardError.ReadToEndAsync();
-            await proc.WaitForExitAsync();
+            await _ffmpegGate.WaitAsync();
+            string stderr;
+            int exitCode;
+            try
+            {
+                using var proc = Process.Start(psi)!;
+                stderr = await proc.StandardError.ReadToEndAsync();
+                await proc.WaitForExitAsync();
+                exitCode = proc.ExitCode;
+            }
+            finally
+            {
+                _ffmpegGate.Release();
+            }
 
-            if (proc.ExitCode != 0 || !File.Exists(posterPath))
-                throw new InvalidOperationException($"ffmpeg failed (exit {proc.ExitCode}) extracting poster: {stderr}");
+            if (exitCode != 0 || !File.Exists(posterPath))
+                throw new InvalidOperationException($"ffmpeg failed (exit {exitCode}) extracting poster: {stderr}");
 
             return posterPath;
         }
@@ -386,16 +405,27 @@ public class TrailerGeneratorService
         };
         foreach (var a in args) psi.ArgumentList.Add(a);
 
-        using var proc = Process.Start(psi)!;
-        string stderr = await proc.StandardError.ReadToEndAsync();
-        await proc.WaitForExitAsync();
+        await _ffmpegGate.WaitAsync();
+        string stderr;
+        int exitCode;
+        try
+        {
+            using var proc = Process.Start(psi)!;
+            stderr = await proc.StandardError.ReadToEndAsync();
+            await proc.WaitForExitAsync();
+            exitCode = proc.ExitCode;
+        }
+        finally
+        {
+            _ffmpegGate.Release();
+        }
 
         TryDelete(titleFile);
         TryDelete(subFile);
 
-        if (proc.ExitCode != 0 || !File.Exists(outPath))
+        if (exitCode != 0 || !File.Exists(outPath))
         {
-            throw new InvalidOperationException($"ffmpeg failed (exit {proc.ExitCode}) generating trailer: {stderr}");
+            throw new InvalidOperationException($"ffmpeg failed (exit {exitCode}) generating trailer: {stderr}");
         }
     }
 
