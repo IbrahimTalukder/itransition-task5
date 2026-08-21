@@ -173,7 +173,7 @@
     // so a few can run concurrently server-side without risking OOM - raised
     // back up from 1 so the whole page's prefetch finishes faster instead of
     // queuing one at a time.
-    const CONCURRENCY = 2;
+    const CONCURRENCY = 1;
     let i = 0;
     async function worker() {
       while (i < movies.length) {

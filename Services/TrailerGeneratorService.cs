@@ -35,7 +35,11 @@ public class TrailerGeneratorService
     // lightweight, and the old cap of 1 meant a whole page's worth of
     // background prefetching serialized into a long queue, which is what
     // made a single movie feel like it took minutes to show up.
-    private static readonly SemaphoreSlim _ffmpegGate = new(2, 2);
+    // 512MB (Render free tier) kept exceeding even at concurrency=2 under real
+    // traffic (reviewer + background prefetch + Ibrahim testing at once), so
+    // this is back down to 1 - slower, but no more OOM restarts. Bump this up
+    // once the app is on an instance with more headroom.
+    private static readonly SemaphoreSlim _ffmpegGate = new(1, 1);
 
     // (background, accent) hex pairs - deterministically picked, never hardcoded
     // into the generation *logic* being tied to a region; just a visual palette pool.
