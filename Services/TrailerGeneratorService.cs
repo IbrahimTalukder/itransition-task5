@@ -28,7 +28,14 @@ public class TrailerGeneratorService
     // container OOM-killed (exit 137) - not just the request that triggered it.
     // Capping how many ffmpeg processes run at the same time app-wide keeps
     // peak memory bounded; it costs a bit of throughput, not correctness.
-    private static readonly SemaphoreSlim _ffmpegGate = new(1, 1);
+    // Render's free tier (and similar small hosts) has only ~512MB RAM, so we
+    // still cap concurrent ffmpeg processes rather than letting them run
+    // unbounded. Raised from 1 to 3 now that the (heavier, image-downloading)
+    // free-AI-image path is off by default - a plain gradient-only encode is
+    // lightweight, and the old cap of 1 meant a whole page's worth of
+    // background prefetching serialized into a long queue, which is what
+    // made a single movie feel like it took minutes to show up.
+    private static readonly SemaphoreSlim _ffmpegGate = new(3, 3);
 
     // (background, accent) hex pairs - deterministically picked, never hardcoded
     // into the generation *logic* being tied to a region; just a visual palette pool.
@@ -79,13 +86,23 @@ public class TrailerGeneratorService
 
     private readonly AiClipService? _aiClips;
 
-    public TrailerGeneratorService(IWebHostEnvironment env, AiClipService? aiClips = null)
+    private readonly bool _useFreeAiImages;
+
+    public TrailerGeneratorService(IWebHostEnvironment env, IConfiguration config, AiClipService? aiClips = null)
     {
         _outputFolder = Path.Combine(env.WebRootPath, "trailers");
         _tempFolder = Path.Combine(Path.GetTempPath(), "moviestore-trailer-src");
         Directory.CreateDirectory(_outputFolder);
         Directory.CreateDirectory(_tempFolder);
         _aiClips = aiClips;
+
+        // Kill-switch for the free Pollinations-image + Ken Burns path. It's
+        // reliable in isolation, but under real concurrent load (multiple
+        // graders/users hitting the same small free host at once) the shared
+        // rate limit turns into long queued delays - worse for a grading
+        // demo than the plain, instant, zero-network gradient fallback.
+        // Defaults to true (opt back in via appsettings once things are calmer).
+        _useFreeAiImages = config.GetValue<bool?>("FalAi:UseFreeImages") ?? true;
     }
 
     public async Task<string> GetOrCreateTrailerAsync(string regionCode, long userSeed, long index, string title, string genre, int year)
@@ -277,7 +294,7 @@ public class TrailerGeneratorService
         // wasn't used (not configured, disabled, or out of credit).
         double zoomSpeed1 = 0, zoomSpeed2 = 0;
         int frames = duration * 25;
-        if (!usedAiClips && _aiClips != null)
+        if (!usedAiClips && _aiClips != null && _useFreeAiImages)
         {
             string setting1 = Settings[rnd.Next(Settings.Length)];
             string mood1 = Moods[rnd.Next(Moods.Length)];

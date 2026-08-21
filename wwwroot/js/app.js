@@ -169,11 +169,11 @@
   // the time the user actually opens a row/card and hits play, the mp4 is
   // already generated instead of them waiting for ffmpeg on first click.
   async function prefetchTrailers(movies) {
-    // Kept low (1) so the background prefetch doesn't pile up parallel ffmpeg
-    // encodes on the server - small hosts (Render's free tier, 512MB RAM) can
-    // get OOM-killed if several run at once. The server also has its own
-    // single-ffmpeg-at-a-time gate as a backstop either way.
-    const CONCURRENCY = 1;
+    // With the free-AI-image path off, gradient-only encodes are lightweight,
+    // so a few can run concurrently server-side without risking OOM - raised
+    // back up from 1 so the whole page's prefetch finishes faster instead of
+    // queuing one at a time.
+    const CONCURRENCY = 3;
     let i = 0;
     async function worker() {
       while (i < movies.length) {
