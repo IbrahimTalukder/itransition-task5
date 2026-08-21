@@ -17,6 +17,15 @@ public class AiClipService
 
     private const string PollinationsBaseUrl = "https://image.pollinations.ai/prompt/";
 
+    // Pollinations is free but rate-limits bursts (HTTP 429). Multiple browser
+    // sessions/tabs prefetching at once can trigger this even though each one
+    // only sends requests one-at-a-time on its own. A single app-wide gate that
+    // also enforces a minimum gap between requests keeps us under the limit
+    // regardless of how many sessions are hitting the server concurrently.
+    private static readonly SemaphoreSlim _pollinationsGate = new(1, 1);
+    private static DateTime _lastPollinationsRequest = DateTime.MinValue;
+    private static readonly TimeSpan _minGap = TimeSpan.FromSeconds(1.5);
+
     public bool IsConfigured => _enabled && !string.IsNullOrWhiteSpace(_apiKey);
 
     public AiClipService(IConfiguration config, IWebHostEnvironment env, ILogger<AiClipService> log)
@@ -54,7 +63,7 @@ public class AiClipService
         {
             int snappedDuration = durationSeconds >= 7 ? 8 : 5;
             var endpoint = $"https://queue.fal.run/{_model}";
-            
+
             var body = new
             {
                 prompt,
@@ -77,8 +86,8 @@ public class AiClipService
             if (resultBody == null) return null;
 
             var resultJson = JsonDocument.Parse(resultBody);
-            if (!resultJson.RootElement.TryGetProperty("video", out var videoEl) || 
-                !videoEl.TryGetProperty("url", out var urlEl) || 
+            if (!resultJson.RootElement.TryGetProperty("video", out var videoEl) ||
+                !videoEl.TryGetProperty("url", out var urlEl) ||
                 urlEl.GetString() is not { } videoUrl)
             {
                 _log.LogError("[AiClip] {Key}: result JSON has no valid video.url: {Body}", cacheKey, resultBody);
@@ -97,6 +106,13 @@ public class AiClipService
         }
     }
 
+    /// <summary>
+    /// Downloads (and caches) one AI-generated still image for a trailer scene via
+    /// Pollinations' free endpoint. <paramref name="seed"/> makes it reproducible -
+    /// same seed always requests the same image. Never throws; returns null on any
+    /// failure so the caller can fall back to the gradient scene. Retries a couple
+    /// times with backoff on a 429 (rate limit) instead of giving up immediately.
+    /// </summary>
     public async Task<string?> GetOrGenerateSceneImageAsync(string cacheKey, string prompt, int seed)
     {
         var path = Path.Combine(_cacheFolder, "img_" + Sanitize(cacheKey) + ".jpg");
@@ -107,33 +123,60 @@ public class AiClipService
         }
         if (File.Exists(path)) File.Delete(path);
 
-        try
-        {
-            var url = $"{PollinationsBaseUrl}{Uri.EscapeDataString(prompt)}?width=960&height=540&seed={seed}&nologo=true&model=flux&safe=true";
-            _log.LogInformation("[AiImage] {Key}: requesting free scene image (Pollinations, seed={Seed}) prompt=\"{Prompt}\"", cacheKey, seed, prompt);
+        var url = $"{PollinationsBaseUrl}{Uri.EscapeDataString(prompt)}?width=960&height=540&seed={seed}&nologo=true&model=flux&safe=true";
 
-            using var res = await _http.GetAsync(url);
-            var bytes = await res.Content.ReadAsByteArrayAsync();
-            if (!res.IsSuccessStatusCode)
+        const int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            await _pollinationsGate.WaitAsync();
+            try
             {
-                _log.LogError("[AiImage] {Key}: request failed - HTTP {Status}", cacheKey, (int)res.StatusCode);
+                var wait = _minGap - (DateTime.UtcNow - _lastPollinationsRequest);
+                if (wait > TimeSpan.Zero) await Task.Delay(wait);
+                _lastPollinationsRequest = DateTime.UtcNow;
+
+                _log.LogInformation("[AiImage] {Key}: requesting free scene image (attempt {Attempt}/{Max}, Pollinations, seed={Seed}) prompt=\"{Prompt}\"", cacheKey, attempt, maxAttempts, seed, prompt);
+
+                using var res = await _http.GetAsync(url);
+                var bytes = await res.Content.ReadAsByteArrayAsync();
+
+                if ((int)res.StatusCode == 429)
+                {
+                    _log.LogWarning("[AiImage] {Key}: rate limited (429), attempt {Attempt}/{Max}", cacheKey, attempt, maxAttempts);
+                    if (attempt < maxAttempts)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(3 * attempt)); // backoff: 3s, 6s
+                        continue;
+                    }
+                    return null;
+                }
+                if (!res.IsSuccessStatusCode)
+                {
+                    _log.LogError("[AiImage] {Key}: request failed - HTTP {Status}", cacheKey, (int)res.StatusCode);
+                    return null;
+                }
+                if (bytes.Length < 2048)
+                {
+                    _log.LogWarning("[AiImage] {Key}: response too small ({Bytes} bytes) - treating as failure", cacheKey, bytes.Length);
+                    return null;
+                }
+
+                await File.WriteAllBytesAsync(path, bytes);
+                _log.LogInformation("[AiImage] {Key}: success, saved {Bytes} bytes to {Path}", cacheKey, bytes.Length, path);
+                return path;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "[AiImage] {Key}: threw an exception", cacheKey);
                 return null;
             }
-            if (bytes.Length < 2048)
+            finally
             {
-                _log.LogWarning("[AiImage] {Key}: response too small ({Bytes} bytes) - treating as failure", cacheKey, bytes.Length);
-                return null;
+                _pollinationsGate.Release();
             }
+        }
 
-            await File.WriteAllBytesAsync(path, bytes);
-            _log.LogInformation("[AiImage] {Key}: success, saved {Bytes} bytes to {Path}", cacheKey, bytes.Length, path);
-            return path;
-        }
-        catch (Exception ex)
-        {
-            _log.LogError(ex, "[AiImage] {Key}: threw an exception", cacheKey);
-            return null;
-        }
+        return null;
     }
 
     private static string Sanitize(string s) =>
