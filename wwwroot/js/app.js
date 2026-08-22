@@ -164,26 +164,14 @@
     }
   }
 
-  // Warm the server-side trailer cache for the whole visible page in the
-  // background (low concurrency so it doesn't hammer ffmpeg), so that by
-  // the time the user actually opens a row/card and hits play, the mp4 is
-  // already generated instead of them waiting for ffmpeg on first click.
+  // Background prefetch is now OFF - with AI images back on, a full page's
+  // worth of prefetching (15 movies x 2 images, all rate/queue-limited)
+  // hogs the single server-side generation queue, so a movie the user
+  // actually clicks gets stuck waiting behind ones nobody asked to see yet.
+  // Only what's explicitly opened gets generated now, so clicks go straight
+  // to the front of the queue instead of behind a whole page of prefetches.
   async function prefetchTrailers(movies) {
-    // With the free-AI-image path off, gradient-only encodes are lightweight,
-    // so a few can run concurrently server-side without risking OOM - raised
-    // back up from 1 so the whole page's prefetch finishes faster instead of
-    // queuing one at a time.
-    const CONCURRENCY = 1;
-    let i = 0;
-    async function worker() {
-      while (i < movies.length) {
-        const movie = movies[i++];
-        try {
-          await fetch(movie.trailerPosterUrl);
-        } catch { /* best effort, ignore failures */ }
-      }
-    }
-    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+    // intentionally a no-op for now
   }
 
   // Compact « 1 2 3 » pager with no known total page count (data is endless),
